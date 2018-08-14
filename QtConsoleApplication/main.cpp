@@ -7,8 +7,7 @@
 #include <iostream>
 #include "TileFile.h"
 #include <osgDB/ReaderWriter>
-#include <osgDB/readfile>
-#include <osgDB/writefile>
+
 #include "TextureVisitor.h"
 
 QVector<TileFolder> ClassifyTileModelByFolder(QString TilePath);
