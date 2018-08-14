@@ -1,0 +1,276 @@
+#include <QtCore/QCoreApplication>
+#include <QFileInfoList>
+#include <QDir>
+#include <QVector>
+#include <QMap>
+#include "TileFolder.h"
+#include <iostream>
+#include "TileFile.h"
+#include <osgDB/ReaderWriter>
+#include <osgDB/readfile>
+#include <osgDB/writefile>
+#include "TextureVisitor.h"
+
+QVector<TileFolder> ClassifyTileModelByFolder(QString TilePath);
+TileFile ClassifyTileModelByLOD(QFileInfo TileInfo);
+void Conv(TileFile TileFile, osg::ref_ptr<osg::Group> root1, osg::ref_ptr<osg::Group> root2, osg::ref_ptr<osg::Group> root3, osg::ref_ptr<osg::Group> root4, osg::ref_ptr<osg::Group> root5, osg::ref_ptr<osg::Group> root6);
+
+int main(int argc, char *argv[])
+{
+	QCoreApplication a(argc, argv);
+
+	QVector<TileFolder> tileModelVectorByFolder;
+
+	tileModelVectorByFolder = ClassifyTileModelByFolder("D:\QXOsgb"); //按文件夹分类倾斜模型信息
+	for each(TileFolder tileFolder in tileModelVectorByFolder)
+	{
+		QVector<TileFile> tileModelVectorByLOD;
+		osg::ref_ptr<osg::Group> root1 = new osg::Group();
+		osg::ref_ptr<osg::Group> root2 = new osg::Group();
+		osg::ref_ptr<osg::Group> root3 = new osg::Group();
+		osg::ref_ptr<osg::Group> root4 = new osg::Group();
+		osg::ref_ptr<osg::Group> root5 = new osg::Group();
+		osg::ref_ptr<osg::Group> root6 = new osg::Group();
+		TextureVisitor tv1;
+		TextureVisitor tv2;
+		TextureVisitor tv3;
+		TextureVisitor tv4;
+		TextureVisitor tv5;
+		TextureVisitor tv6;
+		for each(QFileInfo qf in tileFolder.folderFileInfoList)
+		{
+			//std::cout << qf.absoluteFilePath().toStdString() << std::endl; //当前文件夹中的倾斜文件
+			TileFile tileFile = ClassifyTileModelByLOD(qf);
+			tileModelVectorByLOD.append(tileFile);
+		}
+		for each(TileFile tileFile in tileModelVectorByLOD)
+		{
+			//std::cout << "LOD:" << std::to_string(tileFile.tileLOD) << "  文件：" << tileFile.tileFileInfo.absoluteFilePath().toStdString() << std::endl; //当前文件信息
+			Conv(tileFile, root1, root2, root3, root4, root5, root6);
+		}
+		root1->accept(tv1);
+		root2->accept(tv2);
+		root3->accept(tv3);
+		root4->accept(tv4);
+		root5->accept(tv5);
+		root6->accept(tv6);
+		std::map<std::string, osg::Image*> imageList1 = tv1.getImages();
+		std::map<std::string, osg::Image*> imageList2 = tv2.getImages();
+		std::map<std::string, osg::Image*> imageList3 = tv3.getImages();
+		std::map<std::string, osg::Image*> imageList4 = tv4.getImages();
+		std::map<std::string, osg::Image*> imageList5 = tv5.getImages();
+		std::map<std::string, osg::Image*> imageList6 = tv6.getImages();
+		std::map<std::string, osg::Image*>::iterator iter1 = imageList1.begin();
+		std::map<std::string, osg::Image*>::iterator iter2 = imageList2.begin();
+		std::map<std::string, osg::Image*>::iterator iter3 = imageList3.begin();
+		std::map<std::string, osg::Image*>::iterator iter4 = imageList4.begin();
+		std::map<std::string, osg::Image*>::iterator iter5 = imageList5.begin();
+		std::map<std::string, osg::Image*>::iterator iter6 = imageList6.begin();
+		QString savePath1 = "D:\QXOsgb\output1\\";
+		QString savePath2 = "D:\QXOsgb\output2\\";
+		QString savePath3 = "D:\QXOsgb\output3\\";
+		QString savePath4 = "D:\QXOsgb\output4\\";
+		QString savePath5 = "D:\QXOsgb\output5\\";
+		QString savePath6 = "D:\QXOsgb\output6\\";
+		QDir savePathDir1;
+		QDir savePathDir2;
+		QDir savePathDir3;
+		QDir savePathDir4;
+		QDir savePathDir5;
+		QDir savePathDir6;
+		if (!savePathDir1.exists(savePath1))
+		{
+			savePathDir1.mkpath(savePath1);
+		}
+		if (!savePathDir2.exists(savePath1))
+		{
+			savePathDir2.mkpath(savePath1);
+		}
+		if (!savePathDir3.exists(savePath1))
+		{
+			savePathDir3.mkpath(savePath1);
+		}
+		if (!savePathDir4.exists(savePath1))
+		{
+			savePathDir4.mkpath(savePath1);
+		}
+		if (!savePathDir5.exists(savePath1))
+		{
+			savePathDir5.mkpath(savePath1);
+		}
+		if (!savePathDir6.exists(savePath1))
+		{
+			savePathDir6.mkpath(savePath1);
+		}
+		for (; iter1 != imageList1.end(); iter1++)
+		{
+			osgDB::writeImageFile(*(iter1->second), savePath1.toStdString() + iter1->first);
+		}
+		for (; iter2 != imageList2.end(); iter2++)
+		{
+			osgDB::writeImageFile(*(iter2->second), savePath2.toStdString() + iter2->first);
+		}
+		for (; iter3 != imageList3.end(); iter3++)
+		{
+			osgDB::writeImageFile(*(iter3->second), savePath3.toStdString() + iter3->first);
+		}
+		for (; iter4 != imageList4.end(); iter4++)
+		{
+			osgDB::writeImageFile(*(iter4->second), savePath4.toStdString() + iter4->first);
+		}
+		for (; iter5 != imageList5.end(); iter5++)
+		{
+			osgDB::writeImageFile(*(iter5->second), savePath5.toStdString() + iter5->first);
+		}
+		for (; iter6 != imageList6.end(); iter6++)
+		{
+			osgDB::writeImageFile(*(iter6->second), savePath6.toStdString() + iter6->first);
+		}
+		osgDB::writeNodeFile(*root1.get(), savePath1.toStdString() + iter1->first.substr(0, 14)+ "_lod _01.obj");
+		osgDB::writeNodeFile(*root2.get(), savePath2.toStdString() + iter1->first.substr(0, 14) + "_lod _02.obj");
+		osgDB::writeNodeFile(*root3.get(), savePath3.toStdString() + iter1->first.substr(0, 14) + "_lod _03.obj");
+		osgDB::writeNodeFile(*root4.get(), savePath4.toStdString() + iter1->first.substr(0, 14) + "_lod _04.obj");
+		osgDB::writeNodeFile(*root5.get(), savePath5.toStdString() + iter1->first.substr(0, 14) + "_lod _05.obj");
+		osgDB::writeNodeFile(*root6.get(), savePath6.toStdString() + iter1->first.substr(0, 14) + "_lod _06.obj");
+	}
+
+
+	return a.exec();
+}
+
+QVector<TileFolder> ClassifyTileModelByFolder(QString TilePath)
+{
+	QVector<TileFolder> TileModelVectorByFolder;
+	QDir dir(TilePath);
+	QFileInfoList allFolderList = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+	for (int i=0;i<allFolderList.size();i++)
+	{
+		//std::cout << allFolderList.at(i).fileName().toStdString()<<std::endl; //当前文件夹
+		TileFolder tileFolder;
+		if (allFolderList.at(i).fileName().contains("Tile_"))
+		{
+			tileFolder.folderName = allFolderList.at(i).fileName();
+			QDir folderDir(allFolderList.at(i).absoluteFilePath());
+			QFileInfoList tempFileInfoList = folderDir.entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
+			for (int j=0;j<tempFileInfoList.size();j++)
+			{
+				//std::cout << tempFileInfoList.at(j).fileName().toStdString() << std::endl; //当前文件
+				tileFolder.folderFileInfoList.append(tempFileInfoList.at(j));
+			}
+			TileModelVectorByFolder.append(tileFolder);
+		}
+	}
+	return TileModelVectorByFolder;
+}
+
+/*QVector<TileFile> ClassifyTileModelByLOD(QFileInfo TileInfo)
+{
+	QVector<TileFile> TileModelVectorByLOD;	
+	if (TileInfo.fileName().contains("L15"))
+	{
+		TileFile tileFile;
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 5;
+		TileModelVectorByLOD.append(tileFile);
+	}
+	if (TileInfo.fileName().contains("L16"))
+	{
+		TileFile tileFile;
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 4;
+		TileModelVectorByLOD.append(tileFile);
+	}
+	if (TileInfo.fileName().contains("L17"))
+	{
+		TileFile tileFile;
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 3;
+		TileModelVectorByLOD.append(tileFile);
+	}
+	if (TileInfo.fileName().contains("L18"))
+	{
+		TileFile tileFile;
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 2;
+		TileModelVectorByLOD.append(tileFile);
+	}
+	if (TileInfo.fileName().contains("L18"))
+	{
+		TileFile tileFile;
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 1;
+		TileModelVectorByLOD.append(tileFile);
+	}
+	return TileModelVectorByLOD;
+}*/
+
+TileFile ClassifyTileModelByLOD(QFileInfo TileInfo)
+{
+	TileFile tileFile;
+	if (TileInfo.fileName().contains("L15"))
+	{
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 6;
+	}
+	if (TileInfo.fileName().contains("L16"))
+	{
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 5;
+	}
+	if (TileInfo.fileName().contains("L17"))
+	{
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 4;
+	}
+	if (TileInfo.fileName().contains("L18"))
+	{
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 3;
+	}
+	if (TileInfo.fileName().contains("L18"))
+	{
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 5;
+	}
+	if (TileInfo.fileName().contains("L19"))
+	{
+		tileFile.tileFileInfo = TileInfo;
+		tileFile.tileLOD = 1;
+	}
+	return tileFile;
+}
+
+void Conv(TileFile TileFile, osg::ref_ptr<osg::Group> root1, osg::ref_ptr<osg::Group> root2, osg::ref_ptr<osg::Group> root3, osg::ref_ptr<osg::Group> root4, osg::ref_ptr<osg::Group> root5, osg::ref_ptr<osg::Group> root6)
+{
+	if (TileFile.tileLOD == 1)
+	{
+		root1->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
+	}
+	if (TileFile.tileLOD == 2)
+	{
+		root2->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
+	}
+	if (TileFile.tileLOD == 3)
+	{
+		root3->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
+	}
+	if (TileFile.tileLOD == 4)
+	{
+		root4->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
+	}
+	if (TileFile.tileLOD == 5)
+	{
+		root5->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
+	}
+	if (TileFile.tileLOD == 6)
+	{
+		root6->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
+	}
+}
+
+QVector<TileFile> TileVector1;
+QVector<TileFile> TileVector2;
+QVector<TileFile> TileVector3;
+QVector<TileFile> TileVector4;
+QVector<TileFile> TileVector5;
+QVector<TileFile> TileVector6;
