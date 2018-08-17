@@ -1,75 +1,66 @@
 #include <QtCore/QCoreApplication>
-#include <QFileInfoList>
+
 #include <QDir>
 #include <QVector>
+#include <QString>
+#include <QThreadPool>
 #include <QMap>
-#include "TileFolder.h"
+
 #include <iostream>
-#include "TileFile.h"
+
 #include <osgDB/ReaderWriter>
+#include <osgViewer/Viewer>
 
 #include "TextureVisitor.h"
+#include "TileFile.h"
+#include "TileFolder.h"
+#include "ReadTask.h"
+#include "ConvTask.h"
 
 QVector<TileFolder> ClassifyTileModelByFolder(QString TilePath);
-TileFile ClassifyTileModelByLOD(QFileInfo TileInfo);
-void Conv(TileFile TileFile, osg::ref_ptr<osg::Group> root1, osg::ref_ptr<osg::Group> root2, osg::ref_ptr<osg::Group> root3, osg::ref_ptr<osg::Group> root4, osg::ref_ptr<osg::Group> root5, osg::ref_ptr<osg::Group> root6);
+void ClassifyTileModelByLOD(QFileInfo TileInfo, QVector<TileFile*>& TileVector1, QVector<TileFile*>& TileVector2, QVector<TileFile*>& TileVector3, QVector<TileFile*>& TileVector4);
+void ReadOSGB(QVector<TileFile*> TileVector);
+
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
 
+	QThreadPool pool;
+	pool.setMaxThreadCount(20);
+
 	QVector<TileFolder> tileModelVectorByFolder;
+	std::cout << "请输入目录" << std::endl;
+	std::string folderPath;
+	std::cin >> folderPath;
 
-
-	tileModelVectorByFolder = ClassifyTileModelByFolder("D:\QXOsgb"); //按文件夹分类倾斜模型信息
-
+	tileModelVectorByFolder = ClassifyTileModelByFolder(QString::fromStdString(folderPath)); //按文件夹分类倾斜模型信息
+	ConvTask::bbbb = tileModelVectorByFolder.size()*4;
+	ConvTask::aaaa = 0;
 	for each(TileFolder tileFolder in tileModelVectorByFolder)
 	{
 		QVector<TileFile> tileModelVectorByLOD;
-		QVector<TileFile> TileVector1;
-		QVector<TileFile> TileVector2;
-		QVector<TileFile> TileVector3;
-		QVector<TileFile> TileVector4;
-		QVector<TileFile> TileVector5;
-		QVector<TileFile> TileVector6;
+		QVector<TileFile*> TileVector1;
+		QVector<TileFile*> TileVector2;
+		QVector<TileFile*> TileVector3;
+		QVector<TileFile*> TileVector4;
 
 		for each(QFileInfo qf in tileFolder.folderFileInfoList)
 		{
 			//std::cout << qf.absoluteFilePath().toStdString() << std::endl; //当前文件夹中的倾斜文件
-			TileFile tileFile = ClassifyTileModelByLOD(qf);
-			tileModelVectorByLOD.append(tileFile);
-
+			ClassifyTileModelByLOD(qf, TileVector1, TileVector2, TileVector3,TileVector4);			
 		}
-		for each(TileFile tileFile in tileModelVectorByLOD)
-		{
-			//std::cout << "LOD:" << std::to_string(tileFile.tileLOD) << "  文件：" << tileFile.tileFileInfo.absoluteFilePath().toStdString() << std::endl; //当前文件信息
-			if (tileFile.tileLOD == 1)
-			{
-				TileVector1.append(tileFile);
-			}
-			if (tileFile.tileLOD == 2)
-			{
-				TileVector2.append(tileFile);
-			}
-			if (tileFile.tileLOD == 3)
-			{
-				TileVector3.append(tileFile);
-			}
-			if (tileFile.tileLOD == 4)
-			{
-				TileVector4.append(tileFile);
-			}
-			if (tileFile.tileLOD == 5)
-			{
-				TileVector5.append(tileFile);
-			}
-			if (tileFile.tileLOD == 6)
-			{
-				TileVector6.append(tileFile);
-			}
-		}
+		
+		//std::cout << "debug"<<std::endl;
+		//QString q = TileVector1[1]->tileFileInfo.fileName();
+		pool.start(new ConvTask(TileVector1, QString::fromStdString(folderPath)));
+		pool.start(new ConvTask(TileVector2, QString::fromStdString(folderPath)));
+		pool.start(new ConvTask(TileVector3, QString::fromStdString(folderPath)));
+		pool.start(new ConvTask(TileVector4, QString::fromStdString(folderPath)));
 
+		TileVector1.clear(); TileVector2.clear(); TileVector3.clear(); TileVector4.clear();
 	}
+
 
 
 	return a.exec();
@@ -141,67 +132,63 @@ QVector<TileFolder> ClassifyTileModelByFolder(QString TilePath)
 	return TileModelVectorByLOD;
 }*/
 
-TileFile ClassifyTileModelByLOD(QFileInfo TileInfo)
+void ClassifyTileModelByLOD(QFileInfo TileInfo,QVector<TileFile*>& TileVector1, QVector<TileFile*>& TileVector2, QVector<TileFile*>& TileVector3, QVector<TileFile*>& TileVector4)
 {
-	TileFile tileFile;
+	TileFile* tileFile = new TileFile;
 	if (TileInfo.fileName().contains("L15"))
 	{
-		tileFile.tileFileInfo = TileInfo;
-		tileFile.tileLOD = 6;
+		tileFile->tileLOD = 4;
+		tileFile->tileFileInfo = TileInfo;
+		TileVector4.append(tileFile);
+		//delete tileFile;
 	}
 	if (TileInfo.fileName().contains("L16"))
 	{
-		tileFile.tileFileInfo = TileInfo;
-		tileFile.tileLOD = 5;
+		tileFile->tileLOD = 3;
+		tileFile->tileFileInfo = TileInfo;
+		TileVector3.append(tileFile);
+		//delete tileFile;
 	}
 	if (TileInfo.fileName().contains("L17"))
 	{
-		tileFile.tileFileInfo = TileInfo;
-		tileFile.tileLOD = 4;
+		tileFile->tileLOD = 2;
+		tileFile->tileFileInfo = TileInfo;
+		TileVector2.append(tileFile);
+		//delete tileFile;
 	}
+
 	if (TileInfo.fileName().contains("L18"))
 	{
-		tileFile.tileFileInfo = TileInfo;
-		tileFile.tileLOD = 3;
+		tileFile->tileLOD = 1;
+		tileFile->tileFileInfo = TileInfo;
+		TileVector1.append(tileFile);
+		//delete tileFile;
 	}
-	if (TileInfo.fileName().contains("L18"))
-	{
-		tileFile.tileFileInfo = TileInfo;
-		tileFile.tileLOD = 5;
-	}
-	if (TileInfo.fileName().contains("L19"))
-	{
-		tileFile.tileFileInfo = TileInfo;
-		tileFile.tileLOD = 1;
-	}
-	return tileFile;
+
 }
 
-/*void Conv(TileFile TileFile, osg::ref_ptr<osg::Group> root1, osg::ref_ptr<osg::Group> root2, osg::ref_ptr<osg::Group> root3, osg::ref_ptr<osg::Group> root4, osg::ref_ptr<osg::Group> root5, osg::ref_ptr<osg::Group> root6)
+void ReadOSGB(QVector<TileFile*> TileVector)
 {
-	if (TileFile.tileLOD == 1)
-	{
-		root1->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
-	}
-	if (TileFile.tileLOD == 2)
-	{
-		root2->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
-	}
-	if (TileFile.tileLOD == 3)
-	{
-		root3->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
-	}
-	if (TileFile.tileLOD == 4)
-	{
-		root4->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
-	}
-	if (TileFile.tileLOD == 5)
-	{
-		root5->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
-	}
-	if (TileFile.tileLOD == 6)
-	{
-		root6->addChild(osgDB::readNodeFile(TileFile.tileFileInfo.absoluteFilePath().toStdString()));
-	}
-}*/
-
+	osg::ref_ptr<osg::Group> root = new osg::Group();
+	osg::ref_ptr<osgViewer::Viewer> view = new osgViewer::Viewer();
+		for (int i = 0; i<TileVector.size(); i++)
+		{
+			try
+			{
+				QString q = TileVector[i]->tileFileInfo.filePath();
+				osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(q.toStdString());
+				root->addChild(node);
+				node.release();
+			}
+			catch(_exception e)
+			{
+				std::cout << "异常..." << std::endl;
+				continue;		
+			}
+		}	
+	view->setSceneData(root.get());
+	view->setUpViewInWindow(800, 300, 1920, 1080);
+	view->realize();
+	view->run();
+	root.release();
+}
